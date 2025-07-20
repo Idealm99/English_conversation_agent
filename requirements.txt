@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+chromadb
+openai
+redis
+numpy
+scikit-learn
+pydantic
+structlog
+tiktoken
