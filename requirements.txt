@@ -8,3 +8,7 @@ scikit-learn
 pydantic
 structlog
 tiktoken
+tinydb
+httpx
+twilio
+python-multipart

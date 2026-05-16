@@ -72,9 +72,46 @@ class Settings(BaseModel):
         default_factory=lambda: int(_env("MEMORY_MAX_TURNS", "10") or 10)
     )
 
+    # 개발용 스텁: 설정되면 ChatService가 Vertex/Chroma를 건너뛰고 이 문구를 그대로 답변으로 반환.
+    chat_stub_response: str | None = Field(default_factory=lambda: _env("CHAT_STUB_RESPONSE"))
+
     # 데이터 경로
     faq_data_path: Path = Field(
         default_factory=lambda: Path(_env("FAQ_DATA_PATH", "./data/faqs.json") or "./data/faqs.json")
+    )
+
+    # 모바일 푸시 / 디바이스 저장소
+    device_db_path: Path = Field(
+        default_factory=lambda: Path(_env("DEVICE_DB_PATH", "./.data/devices.json") or "./.data/devices.json")
+    )
+    expo_push_url: str = Field(
+        default_factory=lambda: _env("EXPO_PUSH_URL", "https://exp.host/--/api/v2/push/send")
+        or "https://exp.host/--/api/v2/push/send"
+    )
+    # Expo 유료 프로젝트의 액세스 토큰. 무료 사용 시 None.
+    expo_access_token: str | None = Field(default_factory=lambda: _env("EXPO_ACCESS_TOKEN"))
+
+    # Twilio Voice
+    twilio_account_sid: str | None = Field(default_factory=lambda: _env("TWILIO_ACCOUNT_SID"))
+    twilio_auth_token: str | None = Field(default_factory=lambda: _env("TWILIO_AUTH_TOKEN"))
+    # Twilio에서 발신용으로 구매한 번호 (E.164 형식, 예: +15551234567).
+    twilio_from_number: str | None = Field(default_factory=lambda: _env("TWILIO_FROM_NUMBER"))
+    # Twilio가 우리 webhook을 호출할 때 사용하는 공개 베이스 URL (ngrok 주소 등).
+    public_base_url: str | None = Field(default_factory=lambda: _env("PUBLIC_BASE_URL"))
+    # 통화 음성 설정 (Polly Korean voice / language tag).
+    voice_language: str = Field(
+        default_factory=lambda: _env("VOICE_LANGUAGE", "ko-KR") or "ko-KR"
+    )
+    voice_tts_voice: str = Field(
+        default_factory=lambda: _env("VOICE_TTS_VOICE", "Polly.Seoyeon") or "Polly.Seoyeon"
+    )
+    # 무음 N초 이상이면 Twilio가 Gather를 종료한다. 'auto'면 Twilio가 자동 판단.
+    voice_speech_timeout: str = Field(
+        default_factory=lambda: _env("VOICE_SPEECH_TIMEOUT", "auto") or "auto"
+    )
+    # 통화 한 건당 최대 턴 수 (무한 루프 방지).
+    voice_max_turns: int = Field(
+        default_factory=lambda: int(_env("VOICE_MAX_TURNS", "10") or 10)
     )
 
 

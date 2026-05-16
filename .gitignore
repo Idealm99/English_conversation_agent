@@ -1,2 +1,12 @@
 .env
 venv
+.venv/
+__pycache__/
+*.pyc
+
+# 런타임 데이터 — 머신마다 다름, 비공개 정보 포함 가능
+.chroma/
+.data/
+
+# Claude Code 워크트리 메타
+.claude/

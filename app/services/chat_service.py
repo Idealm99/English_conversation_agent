@@ -35,6 +35,19 @@ class ChatService:
         cache: AnswerCache | None = None,
     ) -> None:
         self._settings = settings or get_settings()
+        self._memory = memory or ConversationMemory(self._settings)
+
+        # 스텁 모드: Vertex/Chroma 초기화를 건너뛴다. handle()에서 고정 응답 반환.
+        if self._settings.chat_stub_response is not None:
+            logger.warning(
+                "ChatService running in STUB MODE — 모든 답변이 고정 문구로 반환됩니다."
+            )
+            self._retriever = None  # type: ignore[assignment]
+            self._ranker = None  # type: ignore[assignment]
+            self._llm = None  # type: ignore[assignment]
+            self._cache = cache or AnswerCache(self._settings)
+            return
+
         # 명시적 주입이 없으면 기본 컴포넌트를 lazy-init.
         if retriever is None:
             embedder = EmbeddingClient(self._settings)
@@ -43,7 +56,6 @@ class ChatService:
         self._retriever = retriever
         self._ranker = ranker or Ranker(self._settings)
         self._llm = llm or LLMClient(self._settings)
-        self._memory = memory or ConversationMemory(self._settings)
         self._cache = cache or AnswerCache(self._settings)
 
     def _cache_key(self, message: str) -> str:
@@ -54,6 +66,16 @@ class ChatService:
         )
 
     def handle(self, request: ChatRequest) -> ChatResponse:
+        if self._settings.chat_stub_response is not None:
+            answer = self._settings.chat_stub_response
+            self._memory.add_turn(request.session_id, request.message, answer)
+            return ChatResponse(
+                session_id=request.session_id,
+                answer=answer,
+                sources=[],
+                used_cache=False,
+            )
+
         cache_key = self._cache_key(request.message)
         cached = self._cache.get(cache_key)
         if cached:
