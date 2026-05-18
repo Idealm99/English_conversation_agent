@@ -12,3 +12,6 @@ tinydb
 httpx
 twilio
 python-multipart
+google-cloud-speech
+google-cloud-texttospeech
+websockets

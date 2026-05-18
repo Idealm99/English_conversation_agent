@@ -1,3 +1,4 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { useEffect, useRef, useState } from 'react';
@@ -5,20 +6,26 @@ import { Platform } from 'react-native';
 
 import { api } from '@/api/client';
 
+// Expo Go (SDK 53+) 에서는 Android remote push 가 빠졌다.
+// 푸시는 dev build / production build 에서만 제대로 동작하므로 Expo Go 면 등록을 건너뛴다.
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
 interface State {
   token: string | null;
   error: string | null;
   loading: boolean;
 }
 
-// 포그라운드에서도 배너/사운드를 노출한다.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// 포그라운드에서도 배너/사운드를 노출한다. Expo Go 에선 어차피 무시되므로 생략.
+if (!IS_EXPO_GO) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+}
 
 
 async function fetchExpoPushToken(): Promise<string> {
@@ -59,6 +66,13 @@ export function usePushRegistration(sessionId: string | null): State {
   useEffect(() => {
     if (!sessionId || registered.current) return;
     registered.current = true;
+
+    // Expo Go 에서는 푸시 자체가 지원되지 않으므로 조용히 건너뛴다.
+    if (IS_EXPO_GO) {
+      setState({ token: null, error: 'expo-go (push 미지원)', loading: false });
+      return;
+    }
+
     setState((s) => ({ ...s, loading: true }));
 
     (async () => {

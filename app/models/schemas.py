@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,21 @@ class ChatRequest(BaseModel):
 
     session_id: str = Field(..., description="대화 세션 식별자")
     message: str = Field(..., min_length=1, max_length=2000, description="사용자 입력")
-    top_k: int = Field(default=4, ge=1, le=20, description="검색할 FAQ 개수")
+    top_k: int = Field(default=4, ge=1, le=20, description="검색할 FAQ 개수 (RAG 모드만)")
+    character_id: Optional[str] = Field(
+        default=None,
+        description="대화 캐릭터 ID. 없으면 기본 캐릭터 사용 (ConversationService 만 사용)",
+    )
+
+
+class CharacterDTO(BaseModel):
+    """클라이언트에 노출되는 캐릭터 메타 (system_prompt 는 제외)."""
+
+    id: str
+    name: str
+    emoji: str
+    tagline: str
+    description: str
 
 
 class FAQHit(BaseModel):
@@ -101,6 +115,10 @@ class OutboundCallRequest(BaseModel):
         default=None,
         description="첫 인사말. 없으면 기본 한국어 인사말 사용",
     )
+    mode: Literal["gather", "stream"] = Field(
+        default="gather",
+        description="gather: TwiML Say+Gather (저비용/단순). stream: Media Streams + GCP STT/TTS (실시간/끼어들기)",
+    )
 
 
 class OutboundCallResult(BaseModel):
@@ -109,3 +127,34 @@ class OutboundCallResult(BaseModel):
     call_sid: str
     session_id: str
     to_number: str
+
+
+# --- 학습 도구 ---
+
+class TranslateRequest(BaseModel):
+    """AI 답변(영어)을 한국어로 번역해달라는 요청."""
+
+    text: str = Field(..., min_length=1, max_length=4000)
+
+
+class PhrasingRequest(BaseModel):
+    """이 한국어를 영어로 어떻게 말할지 알려달라는 요청."""
+
+    korean_text: str = Field(..., min_length=1, max_length=2000)
+
+
+class DictionaryRequest(BaseModel):
+    """영어 단어/표현 사전 조회 요청. context 가 있으면 다의어 해소에 사용."""
+
+    word: str = Field(..., min_length=1, max_length=200)
+    context: Optional[str] = Field(
+        default=None,
+        max_length=2000,
+        description="해당 단어가 등장한 문장/문맥. 다의어 해소용",
+    )
+
+
+class ToolResponse(BaseModel):
+    """비-스트리밍 도구 응답 (non-SSE 호출용)."""
+
+    text: str

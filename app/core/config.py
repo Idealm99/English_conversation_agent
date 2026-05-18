@@ -114,6 +114,28 @@ class Settings(BaseModel):
         default_factory=lambda: int(_env("VOICE_MAX_TURNS", "10") or 10)
     )
 
+    # --- MVP-2: Media Streams + GCP STT/TTS ---
+    # Twilio Media Streams는 μ-law 8kHz 고정.
+    stt_language: str = Field(
+        default_factory=lambda: _env("STT_LANGUAGE", "ko-KR") or "ko-KR"
+    )
+    # 빈 문자열이면 GCP가 언어별 기본 모델 선택. 'phone_call'은 영어 전용이라
+    # ko-KR에선 503 으로 거부됨. 한국어는 'latest_long' 추천 (또는 빈 값).
+    stt_model: str = Field(
+        default_factory=lambda: _env("STT_MODEL", "") or ""
+    )
+    tts_voice_name: str = Field(
+        # Neural2 가 가장 자연스러움. 비용 절감 시 ko-KR-Standard-A 로 변경.
+        default_factory=lambda: _env("TTS_VOICE_NAME", "ko-KR-Neural2-A") or "ko-KR-Neural2-A"
+    )
+    # 첫 인사말. 스트리밍 모드에선 GCP TTS로 합성해서 재생한다.
+    voice_greeting: str = Field(
+        default_factory=lambda: _env(
+            "VOICE_GREETING",
+            "안녕하세요. 무엇을 도와드릴까요?",
+        ) or "안녕하세요. 무엇을 도와드릴까요?"
+    )
+
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:

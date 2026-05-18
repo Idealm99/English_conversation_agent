@@ -29,8 +29,12 @@ async function request<TBody, TResult>(
 }
 
 export const api = {
+  // 영어 회화 채팅 — 백엔드 /conversation (FAQ RAG 미사용, 순수 Gemini chat).
   chat(payload: ChatRequest): Promise<ChatResponse> {
-    return request<ChatRequest, ChatResponse>('/chat', 'POST', payload);
+    return request<ChatRequest, ChatResponse>('/conversation', 'POST', payload);
+  },
+  resetSession(sessionId: string): Promise<void> {
+    return request<undefined, void>(`/conversation/${encodeURIComponent(sessionId)}`, 'DELETE');
   },
   registerDevice(payload: DeviceRegisterRequest) {
     return request('/devices/register', 'POST', payload);

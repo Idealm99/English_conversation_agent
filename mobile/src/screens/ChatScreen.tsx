@@ -5,12 +5,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { MessageBubble } from '@/components/MessageBubble';
 import { useChatMessages } from '@/hooks/useChatMessages';
@@ -24,6 +24,7 @@ export function ChatScreen() {
   const push = usePushRegistration(sessionId);
   const [draft, setDraft] = useState('');
   const listRef = useRef<FlatList<ChatMessage>>(null);
+  const insets = useSafeAreaInsets();
 
   const handleSend = useCallback(async () => {
     const text = draft;
@@ -35,17 +36,17 @@ export function ChatScreen() {
 
   if (!sessionId) {
     return (
-      <SafeAreaView style={styles.loading}>
+      <SafeAreaView style={styles.loading} edges={['top', 'bottom']}>
         <ActivityIndicator />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>FAQ Chatbot</Text>
+          <Text style={styles.title}>English Practice</Text>
           <Text style={styles.subtitle}>
             세션 {sessionId.slice(0, 12)}…
             {push.token ? '  ·  푸시 ✓' : push.error ? '  ·  푸시 ✗' : '  ·  푸시 …'}
@@ -72,15 +73,15 @@ export function ChatScreen() {
       ) : null}
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
-        <View style={styles.inputRow}>
+        <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           <TextInput
             style={styles.input}
             value={draft}
             onChangeText={setDraft}
-            placeholder="질문을 입력하세요"
+            placeholder="Type in English (or Korean)…"
             placeholderTextColor="#9ca3af"
             editable={!sending}
             multiline

@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Practice</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #f3f4f6;
+      --border: #e5e7eb;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --primary: #2563eb;
+      --primary-text: #ffffff;
+      --danger: #dc2626;
+      --error-bg: #fee2e2;
+      --error-text: #991b1b;
+      --assistant-bg: #e5e7eb;
+      --user-bg: #2563eb;
+      --translation-bg: #fef3c7;
+      --translation-text: #78350f;
+      --dictionary-bg: #e0f2fe;
+      --dictionary-text: #0c4a6e;
+      --card-bg: #ffffff;
+      --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      font-size: 16px;
+    }
+    button { font-family: inherit; }
+
+    /* ===== 앱 셸 ===== */
+    #app {
+      display: flex; flex-direction: column;
+      height: 100dvh; max-width: 720px; margin: 0 auto;
+      border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+      position: relative;
+    }
+    .topbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      min-height: 56px;
+    }
+    .topbar .title { font-weight: 600; font-size: 18px; }
+    .topbar .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .topbar .grow { flex: 1; }
+    .topbar button {
+      background: none; border: none; color: var(--primary);
+      font-size: 14px; font-weight: 500; cursor: pointer; padding: 4px 8px;
+      border-radius: 6px;
+    }
+    .topbar button:hover { background: var(--bg-soft); }
+    .topbar .iconbtn { font-size: 18px; padding: 4px 8px; }
+
+    /* ===== 뷰 컨테이너 ===== */
+    .view { flex: 1; overflow-y: auto; display: none; }
+    .view.active { display: flex; flex-direction: column; }
+
+    /* ===== 하단 탭바 ===== */
+    #tabbar {
+      display: flex; border-top: 1px solid var(--border);
+      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--bg);
+    }
+    #tabbar button {
+      flex: 1; background: none; border: none;
+      padding: 8px 4px 10px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: var(--text-muted); font-size: 11px;
+    }
+    #tabbar button .icon { font-size: 22px; line-height: 1; }
+    #tabbar button.active { color: var(--primary); }
+
+    /* ===== 홈 뷰 ===== */
+    #homeView { padding: 16px; gap: 16px; }
+    #homeView h2 {
+      margin: 4px 0 0; font-size: 16px; color: var(--text-muted);
+      font-weight: 500;
+    }
+    .char-grid {
+      display: grid; gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+    .char-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px 12px;
+      cursor: pointer; text-align: left;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.05s, border-color 0.1s;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .char-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+    .char-card .emoji { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+    .char-card .name { font-weight: 600; font-size: 15px; }
+    .char-card .tagline { font-size: 12px; color: var(--text-muted); }
+    .char-card .desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; line-height: 1.4; }
+
+    .recent-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px;
+      cursor: pointer;
+      display: flex; gap: 12px; align-items: center;
+      box-shadow: var(--card-shadow);
+    }
+    .recent-card:hover { border-color: var(--primary); }
+    .recent-card .emoji { font-size: 22px; }
+    .recent-card .body { flex: 1; min-width: 0; }
+    .recent-card .title { font-size: 14px; font-weight: 600; }
+    .recent-card .preview { font-size: 12px; color: var(--text-muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .recent-card .meta { font-size: 11px; color: var(--text-muted); }
+
+    /* ===== 채팅 뷰 ===== */
+    #chatView { display: none; }
+    #chatView.active { display: flex; flex-direction: column; min-height: 0; }
+    #chatMain { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    #toolbar {
+      display: flex; gap: 12px; align-items: center;
+      padding: 6px 16px; font-size: 12px; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); background: var(--bg-soft);
+    }
+    #toolbar label { display: flex; gap: 4px; align-items: center; cursor: pointer; }
+    #toolbar select { font-size: 12px; padding: 2px 4px; }
+    #toolbar .grow { flex: 1; }
+
+    #messages {
+      flex: 1; overflow-y: auto; padding: 12px;
+      display: flex; flex-direction: column;
+      justify-content: flex-start; gap: 8px;
+    }
+    .bubble-row { display: flex; flex-direction: column; }
+    .bubble-row.user { align-items: flex-end; }
+    .bubble-row.assistant { align-items: flex-start; }
+    .bubble {
+      max-width: 80%; padding: 8px 12px; border-radius: 16px;
+      white-space: pre-wrap; line-height: 1.4; word-break: break-word;
+    }
+    .bubble.user { background: var(--user-bg); color: #fff; }
+    .bubble.assistant { background: var(--assistant-bg); color: var(--text); }
+    .bubble.streaming::after {
+      content: '▍'; opacity: 0.5; margin-left: 2px;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .actions {
+      margin-top: 6px; max-width: 80%;
+      display: flex; flex-direction: column; gap: 6px;
+      align-items: flex-start;
+    }
+    .action-btn {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-muted); font-size: 12px;
+      padding: 3px 10px; border-radius: 12px; cursor: pointer;
+    }
+    .action-btn:hover { background: var(--bg-soft); color: var(--text); }
+    .action-btn:disabled { opacity: 0.5; cursor: default; }
+    .action-btn.active { background: var(--bg-soft); color: var(--text); }
+
+    .translation.streaming::after,
+    .answer.streaming::after {
+      content: '▍'; opacity: 0.5; animation: blink 1s steps(1) infinite;
+    }
+
+    .translation {
+      background: var(--translation-bg); color: var(--translation-text);
+      padding: 6px 12px; border-radius: 12px;
+      font-size: 14px; line-height: 1.4; white-space: pre-wrap;
+      width: 100%;
+    }
+
+    .empty {
+      color: var(--text-muted); text-align: center;
+      margin: 24px 0 0; font-size: 14px;
+    }
+
+    #error {
+      background: var(--error-bg); color: var(--error-text);
+      font-size: 13px; padding: 8px 16px; display: none;
+    }
+    #error.visible { display: block; }
+
+    #composer {
+      display: flex; gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+    }
+    #mic {
+      width: 44px; height: 44px; border-radius: 22px; border: none;
+      background: var(--bg-soft); color: var(--text); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    #mic.recording { background: var(--danger); color: #fff; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6); }
+      50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+    }
+    #input {
+      flex: 1; min-height: 44px; max-height: 140px;
+      padding: 10px 14px; border-radius: 22px; border: none;
+      background: var(--bg-soft); font-family: inherit; font-size: 16px;
+      color: var(--text); resize: none; line-height: 1.4;
+    }
+    #input:focus { outline: 2px solid var(--primary); outline-offset: -2px; }
+    #send {
+      min-width: 64px; height: 44px; padding: 0 16px; border: none;
+      border-radius: 22px; background: var(--primary); color: var(--primary-text);
+      font-weight: 600; cursor: pointer; font-size: 15px;
+    }
+    #send:disabled { background: #9ca3af; cursor: default; }
+
+    /* 채팅 뷰에서 입력창 위에 떠 있는 동그라미 버튼 스택. 위→아래: 사전, AI(표현). */
+    #fabStack {
+      position: absolute;
+      right: 16px;
+      bottom: calc(76px + env(safe-area-inset-bottom));
+      display: none; flex-direction: column; gap: 12px;
+      z-index: 10;
+    }
+    #fabStack.visible { display: flex; }
+    #fabStack .fab {
+      width: 52px; height: 52px;
+      border-radius: 26px;
+      background: var(--primary); color: #fff;
+      border: none; cursor: pointer;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #fabStack .fab:hover { transform: scale(1.05); }
+
+    /* ===== 단어장 뷰 ===== */
+    #vocabView { padding: 12px 16px 16px; gap: 12px; }
+    .vocab-search {
+      display: flex; gap: 8px;
+    }
+    .vocab-search input {
+      flex: 1; padding: 8px 12px; border-radius: 10px;
+      border: 1px solid var(--border); background: var(--bg-soft);
+      font-family: inherit; font-size: 14px; color: var(--text);
+    }
+    .vocab-list { display: flex; flex-direction: column; gap: 8px; }
+    .vocab-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      box-shadow: var(--card-shadow);
+    }
+    .vocab-card .head {
+      display: flex; align-items: baseline; gap: 8px;
+      cursor: pointer;
+    }
+    .vocab-card .word { font-weight: 600; font-size: 16px; flex: 1; }
+    .vocab-card .meta { font-size: 11px; color: var(--text-muted); }
+    .vocab-card .delete {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 14px; padding: 0 4px;
+    }
+    .vocab-card .delete:hover { color: var(--danger); }
+    .vocab-card .body {
+      margin-top: 8px; font-size: 13px; line-height: 1.5;
+      white-space: pre-wrap; color: var(--text);
+      display: none;
+    }
+    .vocab-card.expanded .body { display: block; }
+
+    /* ===== 기록 뷰 ===== */
+    #historyView { padding: 12px 16px 16px; gap: 8px; }
+    .conv-card {
+      background: var(--card-bg); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px;
+      display: flex; gap: 12px; align-items: center;
+      box-shadow: var(--card-shadow);
+    }
+    .conv-card .emoji { font-size: 24px; }
+    .conv-card .body { flex: 1; min-width: 0; cursor: pointer; }
+    .conv-card .name-line { display: flex; gap: 8px; align-items: baseline; }
+    .conv-card .name { font-weight: 600; font-size: 14px; }
+    .conv-card .when { font-size: 11px; color: var(--text-muted); }
+    .conv-card .preview {
+      font-size: 12px; color: var(--text-muted); margin-top: 2px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .conv-card .delete {
+      background: none; border: none; color: var(--text-muted);
+      cursor: pointer; font-size: 16px; padding: 0 4px;
+    }
+    .conv-card .delete:hover { color: var(--danger); }
+
+    /* ===== 모달 ===== */
+    #modalOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none; align-items: flex-end; justify-content: center;
+      z-index: 20;
+    }
+    #modalOverlay.visible { display: flex; }
+    #modal {
+      background: var(--bg); width: 100%; max-width: 720px;
+      border-radius: 16px 16px 0 0;
+      max-height: 85dvh;
+      display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    #modal header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    #modal header .title { font-weight: 600; font-size: 16px; flex: 1; }
+    #modal .close {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 22px; cursor: pointer; padding: 0 4px;
+    }
+    #modal .body {
+      flex: 1; overflow-y: auto; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    #modal .hint { font-size: 13px; color: var(--text-muted); }
+    #modal textarea {
+      width: 100%; min-height: 64px; max-height: 160px;
+      padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-soft); font-family: inherit; font-size: 15px;
+      color: var(--text); resize: vertical;
+    }
+    #modal .answer {
+      background: var(--bg-soft); padding: 12px 14px;
+      border-radius: 10px; white-space: pre-wrap; line-height: 1.5;
+      font-size: 14px;
+    }
+    #modal footer {
+      display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border);
+    }
+    #modal footer .secondary {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); cursor: pointer; font-size: 15px;
+    }
+    #modal footer .primary {
+      flex: 1; padding: 10px; border-radius: 10px; border: none;
+      background: var(--primary); color: #fff; cursor: pointer;
+      font-size: 15px; font-weight: 600;
+    }
+    #modal footer .primary:disabled { background: #9ca3af; cursor: default; }
+
+    /* 사전 모달 — 기본 모달 스타일 공유 + input 추가 + saved 라벨 */
+    #dictModalOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none; align-items: flex-end; justify-content: center;
+      z-index: 20;
+    }
+    #dictModalOverlay.visible { display: flex; }
+    #dictModal {
+      background: var(--bg); width: 100%; max-width: 720px;
+      border-radius: 16px 16px 0 0;
+      max-height: 85dvh;
+      display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    #dictModal header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+    }
+    #dictModal header .title { font-weight: 600; font-size: 16px; flex: 1; }
+    #dictModal .close {
+      background: none; border: none; color: var(--text-muted);
+      font-size: 22px; cursor: pointer; padding: 0 4px;
+    }
+    #dictModal .body {
+      flex: 1; overflow-y: auto; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    #dictModal .hint { font-size: 13px; color: var(--text-muted); }
+    #dictModal input[type="text"] {
+      width: 100%; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-soft);
+      font-family: inherit; font-size: 15px; color: var(--text);
+    }
+    #dictModal input[type="text"]:focus,
+    #dictModal textarea:focus {
+      outline: 2px solid var(--primary); outline-offset: -2px;
+    }
+    #dictModal textarea {
+      width: 100%; min-height: 48px; max-height: 140px;
+      padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg-soft);
+      font-family: inherit; font-size: 14px; color: var(--text);
+      resize: vertical;
+    }
+    #dictModal .answer {
+      background: var(--dictionary-bg); color: var(--dictionary-text);
+      padding: 12px 14px; border-radius: 10px;
+      white-space: pre-wrap; line-height: 1.5; font-size: 14px;
+    }
+    #dictModal #dictSaveArea {
+      display: flex; gap: 8px; align-items: center;
+      font-size: 13px;
+    }
+    #dictModal .saved-label { color: #16a34a; font-size: 13px; }
+    #dictModal footer {
+      display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border);
+    }
+    #dictModal footer .secondary {
+      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text); cursor: pointer; font-size: 15px;
+    }
+    #dictModal footer .primary {
+      flex: 1; padding: 10px; border-radius: 10px; border: none;
+      background: var(--primary); color: #fff; cursor: pointer;
+      font-size: 15px; font-weight: 600;
+    }
+    #dictModal footer .primary:disabled { background: #9ca3af; cursor: default; }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b0b0d; --bg-soft: #1f2024; --border: #2a2b30;
+        --text: #f3f4f6; --text-muted: #9ca3af; --assistant-bg: #1f2937;
+        --translation-bg: #44362a; --translation-text: #fde68a;
+        --dictionary-bg: #1e3a5f; --dictionary-text: #bae6fd;
+        --card-bg: #15171b;
+        --card-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===== 홈 뷰 ===== -->
+    <div class="topbar" data-view-bar="home">
+      <div>
+        <div class="title">English Practice</div>
+        <div class="subtitle">캐릭터를 골라 대화를 시작하세요</div>
+      </div>
+    </div>
+    <div id="homeView" class="view">
+      <div id="recentSection" style="display:none">
+        <h2>이어서 하기</h2>
+        <div id="recentList" style="display:flex;flex-direction:column;gap:8px;margin-top:8px"></div>
+      </div>
+      <div>
+        <h2>새 대화 시작</h2>
+        <div id="charGrid" class="char-grid" style="margin-top:8px">
+          <div class="empty">캐릭터 불러오는 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 채팅 뷰 ===== -->
+    <div class="topbar" data-view-bar="chat">
+      <button class="iconbtn" id="backToHome" title="홈">←</button>
+      <div>
+        <div class="title" id="chatCharName">English Practice</div>
+        <div class="subtitle" id="chatStatus">세션 …</div>
+      </div>
+      <div class="grow"></div>
+      <button id="stopSpeak" type="button" title="TTS 중지" style="display:none">🔇</button>
+      <button id="resetChat" type="button">초기화</button>
+    </div>
+    <div id="chatView" class="view">
+      <div id="toolbar">
+        <label><input type="checkbox" id="ttsEnabled" checked /> 음성 응답</label>
+        <label>언어
+          <select id="lang">
+            <option value="en-US" selected>English (US)</option>
+            <option value="ko-KR">한국어</option>
+          </select>
+        </label>
+        <span class="grow"></span>
+        <span id="sttStatus"></span>
+      </div>
+
+      <div id="messages">
+        <div class="empty">메시지를 입력하거나 마이크 버튼을 눌러 말해보세요.</div>
+      </div>
+
+      <div id="error"></div>
+
+      <form id="composer" autocomplete="off">
+        <button id="mic" type="button" title="음성 입력">🎤</button>
+        <textarea id="input" rows="1" placeholder="Type or speak in English…"></textarea>
+        <button id="send" type="submit">전송</button>
+      </form>
+    </div>
+
+    <!-- ===== 단어장 뷰 ===== -->
+    <div class="topbar" data-view-bar="vocab">
+      <div>
+        <div class="title">단어장</div>
+        <div class="subtitle" id="vocabCount">0개</div>
+      </div>
+    </div>
+    <div id="vocabView" class="view">
+      <div class="vocab-search">
+        <input type="text" id="vocabSearch" placeholder="단어로 검색…" />
+      </div>
+      <div id="vocabList" class="vocab-list">
+        <div class="empty">아직 저장된 단어가 없습니다. 채팅에서 사전 조회 후 "단어장에 저장"을 눌러주세요.</div>
+      </div>
+    </div>
+
+    <!-- ===== 기록 뷰 ===== -->
+    <div class="topbar" data-view-bar="history">
+      <div>
+        <div class="title">대화 기록</div>
+        <div class="subtitle" id="historyCount">0개</div>
+      </div>
+    </div>
+    <div id="historyView" class="view">
+      <div id="historyList">
+        <div class="empty">아직 기록된 대화가 없습니다.</div>
+      </div>
+    </div>
+
+    <!-- ===== 플로팅 버튼 스택 (채팅 뷰에서만) ===== -->
+    <div id="fabStack">
+      <button class="fab" id="fabDict" type="button" title="단어 사전">📖</button>
+      <button class="fab" id="fabPhrasing" type="button" title="이거 영어로 어떻게?">💬</button>
+    </div>
+
+    <!-- ===== 하단 탭바 ===== -->
+    <nav id="tabbar">
+      <button data-route="home"><span class="icon">🏠</span><span>홈</span></button>
+      <button data-route="chat"><span class="icon">💬</span><span>채팅</span></button>
+      <button data-route="vocab"><span class="icon">📖</span><span>단어장</span></button>
+      <button data-route="history"><span class="icon">🕒</span><span>기록</span></button>
+    </nav>
+  </div>
+
+  <!-- ===== 표현 도움 모달 ===== -->
+  <div id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div id="modal">
+      <header>
+        <div class="title" id="modalTitle">이거 영어로 어떻게 말하지?</div>
+        <button class="close" id="modalClose" aria-label="닫기">✕</button>
+      </header>
+      <div class="body">
+        <div class="hint">한국어로 표현하고 싶은 문장을 적어주세요. AI가 영어 버전들과 사용 상황을 설명해줍니다.</div>
+        <textarea id="modalInput" placeholder="예) 회의 늦어서 죄송한데, 5분만 늦을게요"></textarea>
+        <div class="answer" id="modalAnswer" style="display:none"></div>
+      </div>
+      <footer>
+        <button class="secondary" id="modalCancel" type="button">닫기</button>
+        <button class="primary" id="modalAsk" type="button">영어로 알려줘</button>
+      </footer>
+    </div>
+  </div>
+
+  <!-- ===== 단어 사전 모달 ===== -->
+  <div id="dictModalOverlay" role="dialog" aria-modal="true" aria-labelledby="dictModalTitle">
+    <div id="dictModal">
+      <header>
+        <div class="title" id="dictModalTitle">📖 단어 사전</div>
+        <button class="close" id="dictModalClose" aria-label="닫기">✕</button>
+      </header>
+      <div class="body">
+        <div class="hint">단어/표현을 입력하세요. 문맥 문장을 같이 적으면 다의어 해소에 도움이 됩니다.</div>
+        <input type="text" id="dictWord" placeholder="단어 또는 표현 (예: \"bank\", \"look up\")" />
+        <textarea id="dictContext" rows="2" placeholder="문맥 (선택) — 단어가 들어간 영어 문장"></textarea>
+        <div class="answer" id="dictResult" style="display:none"></div>
+        <div id="dictSaveArea" style="display:none">
+          <button class="action-btn" id="dictSaveBtn">⭐ 단어장에 저장</button>
+          <span class="saved-label" id="dictSavedLabel" style="display:none">✓ 저장됨</span>
+        </div>
+      </div>
+      <footer>
+        <button class="secondary" id="dictModalCancel" type="button">닫기</button>
+        <button class="primary" id="dictModalGo" type="button">찾기</button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // 상수 / 스토리지 키
+    // ============================================================
+    const API_BASE = '';
+    const KEY_CONVERSATIONS = 'english-practice.conversations.v2';
+    const KEY_ACTIVE_SESSION = 'english-practice.activeSession.v2';
+    const KEY_VOCAB = 'english-practice.vocab.v2';
+    const KEY_LANG = 'english-practice.lang';
+    const KEY_TTS = 'english-practice.ttsEnabled';
+    // 마이그레이션용 (구버전).
+    const OLD_KEY_MESSAGES = 'english-practice.messages';
+    const OLD_KEY_SESSION = 'english-practice.sessionId';
+
+    // ============================================================
+    // 상태
+    // ============================================================
+    /** @type {Array<{id, role, content, streaming?, translation?, dictionary?:{word,result}}>} */
+    let activeMessages = [];
+    /** 활성 대화 세션 ID + 캐릭터 ID. */
+    let activeSessionId = '';
+    let activeCharacterId = '';
+    let activeCharacter = null;
+    /** @type {Array<{id, name, emoji, tagline, description}>} */
+    let characters = [];
+    /** localStorage 의 모든 대화. activeMessages 와 동기화됨. */
+    let conversations = [];
+    /** 단어장. */
+    let vocabulary = [];
+    let sending = false;
+    let currentAssistant = null;
+    let ttsBuffer = '';
+
+    // ============================================================
+    // 스토리지
+    // ============================================================
+    function loadAll() {
+      try { conversations = JSON.parse(localStorage.getItem(KEY_CONVERSATIONS) || '[]'); } catch { conversations = []; }
+      try { vocabulary = JSON.parse(localStorage.getItem(KEY_VOCAB) || '[]'); } catch { vocabulary = []; }
+      activeSessionId = localStorage.getItem(KEY_ACTIVE_SESSION) || '';
+
+      // 마이그레이션 — 구 단일 대화가 있으면 conversations 에 옮긴다.
+      const oldRaw = localStorage.getItem(OLD_KEY_MESSAGES);
+      const oldSid = localStorage.getItem(OLD_KEY_SESSION);
+      if (oldRaw && oldSid && !conversations.find(c => c.sessionId === oldSid)) {
+        try {
+          const msgs = JSON.parse(oldRaw);
+          if (Array.isArray(msgs) && msgs.length) {
+            conversations.push({
+              sessionId: oldSid,
+              characterId: 'casual_friend',
+              createdAt: Date.now(),
+              updatedAt: Date.now(),
+              messages: msgs,
+            });
+            saveConversations();
+          }
+        } catch {}
+      }
+      localStorage.removeItem(OLD_KEY_MESSAGES);
+      localStorage.removeItem(OLD_KEY_SESSION);
+    }
+    function saveConversations() {
+      // 활성 대화의 메시지를 conversations 에 반영.
+      if (activeSessionId) {
+        const idx = conversations.findIndex(c => c.sessionId === activeSessionId);
+        const safeMessages = activeMessages.map(({id, role, content, translation, dictionary}) =>
+          ({id, role, content, translation, dictionary}));
+        const now = Date.now();
+        if (idx >= 0) {
+          conversations[idx].messages = safeMessages;
+          conversations[idx].characterId = activeCharacterId;
+          conversations[idx].updatedAt = now;
+        } else if (safeMessages.length) {
+          conversations.push({
+            sessionId: activeSessionId,
+            characterId: activeCharacterId,
+            createdAt: now,
+            updatedAt: now,
+            messages: safeMessages,
+          });
+        }
+      }
+      localStorage.setItem(KEY_CONVERSATIONS, JSON.stringify(conversations));
+    }
+    function saveVocab() {
+      localStorage.setItem(KEY_VOCAB, JSON.stringify(vocabulary));
+    }
+    function setActiveSession(sessionId, characterId) {
+      activeSessionId = sessionId;
+      activeCharacterId = characterId;
+      activeCharacter = characters.find(c => c.id === characterId) || null;
+      localStorage.setItem(KEY_ACTIVE_SESSION, sessionId);
+
+      const conv = conversations.find(c => c.sessionId === sessionId);
+      activeMessages = conv ? JSON.parse(JSON.stringify(conv.messages || [])) : [];
+      renderChatHeader();
+      rebuildMessages();
+    }
+    const makeId = () => 'm-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8);
+    const makeSessionId = () => 's-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+
+    // ============================================================
+    // 라우터 (해시 기반)
+    // ============================================================
+    const ROUTES = ['home', 'chat', 'vocab', 'history'];
+    const $views = {
+      home: document.getElementById('homeView'),
+      chat: document.getElementById('chatView'),
+      vocab: document.getElementById('vocabView'),
+      history: document.getElementById('historyView'),
+    };
+    const $topbars = document.querySelectorAll('.topbar[data-view-bar]');
+    const $tabBtns = document.querySelectorAll('#tabbar button[data-route]');
+    const $fabStack = document.getElementById('fabStack');
+
+    function currentRoute() {
+      const h = (location.hash || '').replace(/^#\/?/, '');
+      return ROUTES.includes(h) ? h : 'home';
+    }
+    function navigate(route) {
+      if (!ROUTES.includes(route)) route = 'home';
+      location.hash = '#/' + route;
+    }
+    function renderRoute() {
+      const route = currentRoute();
+      Object.entries($views).forEach(([k, el]) => el.classList.toggle('active', k === route));
+      $topbars.forEach(bar => bar.style.display = bar.dataset.viewBar === route ? '' : 'none');
+      $tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.route === route));
+      $fabStack.classList.toggle('visible', route === 'chat');
+
+      if (route === 'home') renderHome();
+      else if (route === 'chat') {
+        if (!activeSessionId) {
+          navigate('home');
+          return;
+        }
+        rebuildMessages();
+      }
+      else if (route === 'vocab') renderVocab();
+      else if (route === 'history') renderHistory();
+    }
+    $tabBtns.forEach(btn => btn.addEventListener('click', () => {
+      if (btn.dataset.route === 'chat' && !activeSessionId) {
+        navigate('home');
+      } else {
+        navigate(btn.dataset.route);
+      }
+    }));
+    window.addEventListener('hashchange', renderRoute);
+
+    // ============================================================
+    // 캐릭터 로딩
+    // ============================================================
+    async function loadCharacters() {
+      try {
+        const res = await fetch(API_BASE + '/characters');
+        if (res.ok) characters = await res.json();
+      } catch {
+        characters = [];
+      }
+      renderHome();
+    }
+
+    // ============================================================
+    // 홈 뷰
+    // ============================================================
+    const $charGrid = document.getElementById('charGrid');
+    const $recentSection = document.getElementById('recentSection');
+    const $recentList = document.getElementById('recentList');
+
+    function renderHome() {
+      // 캐릭터 그리드
+      $charGrid.innerHTML = '';
+      if (!characters.length) {
+        $charGrid.innerHTML = '<div class="empty">캐릭터를 불러오지 못했습니다. /characters 응답을 확인하세요.</div>';
+      } else {
+        for (const c of characters) {
+          const card = document.createElement('div');
+          card.className = 'char-card';
+          card.innerHTML = `
+            <div class="emoji">${c.emoji}</div>
+            <div class="name">${escapeHtml(c.name)}</div>
+            <div class="tagline">${escapeHtml(c.tagline)}</div>
+            <div class="desc">${escapeHtml(c.description)}</div>`;
+          card.addEventListener('click', () => startConversation(c.id));
+          $charGrid.appendChild(card);
+        }
+      }
+      // 최근 대화 1~3개
+      const recent = [...conversations].sort((a,b) => b.updatedAt - a.updatedAt).slice(0, 3);
+      if (recent.length) {
+        $recentSection.style.display = '';
+        $recentList.innerHTML = '';
+        for (const conv of recent) {
+          const c = characters.find(x => x.id === conv.characterId);
+          const lastMsg = conv.messages[conv.messages.length - 1];
+          const card = document.createElement('div');
+          card.className = 'recent-card';
+          card.innerHTML = `
+            <div class="emoji">${c ? c.emoji : '💬'}</div>
+            <div class="body">
+              <div class="title">${escapeHtml(c ? c.name : '대화')}</div>
+              <div class="preview">${escapeHtml(lastMsg ? lastMsg.content : '(빈 대화)')}</div>
+            </div>
+            <div class="meta">${formatTime(conv.updatedAt)}</div>`;
+          card.addEventListener('click', () => {
+            setActiveSession(conv.sessionId, conv.characterId);
+            navigate('chat');
+          });
+          $recentList.appendChild(card);
+        }
+      } else {
+        $recentSection.style.display = 'none';
+      }
+    }
+
+    function startConversation(characterId) {
+      // 새 세션 생성. 같은 캐릭터로 이미 빈 세션이 있으면 그걸 재사용해도 되지만
+      // 단순화: 항상 새로 만든다.
+      const newSid = makeSessionId();
+      setActiveSession(newSid, characterId);
+      saveConversations();
+      navigate('chat');
+    }
+
+    // ============================================================
+    // 채팅 뷰
+    // ============================================================
+    const $messages = document.getElementById('messages');
+    const $error = document.getElementById('error');
+    const $form = document.getElementById('composer');
+    const $input = document.getElementById('input');
+    const $send = document.getElementById('send');
+    const $chatCharName = document.getElementById('chatCharName');
+    const $chatStatus = document.getElementById('chatStatus');
+    const $resetChat = document.getElementById('resetChat');
+    const $backToHome = document.getElementById('backToHome');
+    const $mic = document.getElementById('mic');
+    const $sttStatus = document.getElementById('sttStatus');
+    const $lang = document.getElementById('lang');
+    const $ttsEnabled = document.getElementById('ttsEnabled');
+    const $stopSpeak = document.getElementById('stopSpeak');
+
+    function renderChatHeader() {
+      if (activeCharacter) {
+        $chatCharName.textContent = activeCharacter.emoji + ' ' + activeCharacter.name;
+        $chatStatus.textContent = activeCharacter.tagline;
+      } else {
+        $chatCharName.textContent = 'English Practice';
+        $chatStatus.textContent = '세션 ' + (activeSessionId || '').slice(0, 14) + '…';
+      }
+    }
+    function rebuildMessages() {
+      $messages.innerHTML = '';
+      if (!activeMessages.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = activeCharacter
+          ? `${activeCharacter.emoji} ${activeCharacter.name} 와(과) 대화를 시작해보세요.`
+          : '메시지를 입력하거나 마이크 버튼을 눌러 말해보세요.';
+        $messages.appendChild(empty);
+        return;
+      }
+      for (const m of activeMessages) appendBubble(m);
+    }
+
+    function appendBubble(m) {
+      const row = document.createElement('div');
+      row.className = 'bubble-row ' + m.role;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble ' + m.role + (m.streaming ? ' streaming' : '');
+      bubble.textContent = m.content;
+      row.appendChild(bubble);
+      m._el = bubble;
+
+      if (m.role === 'assistant') {
+        const actions = buildAssistantActions(m);
+        row.appendChild(actions);
+        m._actionsEl = actions;
+        if (m.streaming) actions.style.display = 'none';
+      }
+      $messages.appendChild(row);
+      scrollToBottom();
+    }
+
+    function buildAssistantActions(m) {
+      const wrap = document.createElement('div');
+      wrap.className = 'actions';
+
+      // 번역 (사전은 우하단 FAB 으로 이동했음)
+      const trBtn = document.createElement('button');
+      trBtn.type = 'button';
+      trBtn.className = 'action-btn';
+      trBtn.textContent = m.translation ? '🇰🇷 다시 번역' : '🇰🇷 번역';
+      wrap.appendChild(trBtn);
+
+      const trBox = document.createElement('div');
+      trBox.className = 'translation';
+      trBox.style.display = 'none';
+      wrap.appendChild(trBox);
+
+      if (m.translation) {
+        trBox.style.display = '';
+        trBox.textContent = m.translation;
+      }
+      trBtn.addEventListener('click', () => translateMessage(m, trBtn, trBox));
+      return wrap;
+    }
+
+    /** 단어가 이미 단어장에 있는지 본다. */
+    function isInVocab(word) {
+      const key = (word || '').trim().toLowerCase();
+      if (!key) return false;
+      return vocabulary.some(v => v.word.trim().toLowerCase() === key);
+    }
+
+    function scrollToBottom() {
+      requestAnimationFrame(() => { $messages.scrollTop = $messages.scrollHeight; });
+    }
+    function updateSendEnabled() {
+      $send.disabled = sending || !$input.value.trim();
+      $send.textContent = sending ? '…' : '전송';
+    }
+    function showError(text) {
+      if (!text) { $error.classList.remove('visible'); $error.textContent = ''; }
+      else { $error.classList.add('visible'); $error.textContent = text; }
+    }
+
+    // ---- TTS ----------------------------------------------------------
+    function flushTtsBuffer(force) {
+      if (!$ttsEnabled.checked) { ttsBuffer = ''; return; }
+      while (true) {
+        const m = ttsBuffer.match(/^([\s\S]*?[.!?。?!]+["')\]]?)\s+([\s\S]*)$/);
+        if (m) { speakChunk(m[1]); ttsBuffer = m[2]; }
+        else {
+          if (force && ttsBuffer.trim()) { speakChunk(ttsBuffer); ttsBuffer = ''; }
+          break;
+        }
+      }
+    }
+    function speakChunk(text) {
+      const cleaned = text.replace(/\s+/g, ' ').trim();
+      if (!cleaned) return;
+      const u = new SpeechSynthesisUtterance(cleaned);
+      u.lang = $lang.value;
+      u.rate = 1.0;
+      window.speechSynthesis.speak(u);
+      $stopSpeak.style.display = '';
+    }
+    function stopSpeaking() {
+      window.speechSynthesis.cancel();
+      ttsBuffer = '';
+      $stopSpeak.style.display = 'none';
+    }
+    $stopSpeak.addEventListener('click', stopSpeaking);
+    setInterval(() => {
+      if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+        $stopSpeak.style.display = 'none';
+      }
+    }, 500);
+
+    // ---- SSE 공통 ----------------------------------------------------
+    async function streamSSE(path, body, onDelta) {
+      const res = await fetch(API_BASE + path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const txt = await res.text().catch(() => '');
+        throw new Error('[' + res.status + '] ' + (txt || res.statusText));
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';
+        for (const ev of events) {
+          const line = ev.trim();
+          if (!line.startsWith('data:')) continue;
+          const data = line.slice(5).trim();
+          if (data === '[DONE]') return;
+          let obj;
+          try { obj = JSON.parse(data); } catch { continue; }
+          if (obj.error) throw new Error(obj.error);
+          if (obj.delta) onDelta(obj.delta);
+        }
+      }
+    }
+
+    // ---- 채팅 송신 ----------------------------------------------------
+    async function send() {
+      const text = $input.value.trim();
+      if (!text || sending) return;
+      if (!activeSessionId) { navigate('home'); return; }
+
+      // 첫 메시지면 빈 placeholder 제거.
+      if (activeMessages.length === 0) $messages.innerHTML = '';
+
+      const userMsg = { id: makeId(), role: 'user', content: text };
+      activeMessages.push(userMsg);
+      appendBubble(userMsg);
+      saveConversations();
+
+      $input.value = '';
+      autosize();
+      sending = true;
+      showError('');
+      updateSendEnabled();
+
+      stopSpeaking();
+      currentAssistant = { id: makeId(), role: 'assistant', content: '', streaming: true };
+      activeMessages.push(currentAssistant);
+      appendBubble(currentAssistant);
+
+      try {
+        await streamSSE('/conversation/stream', {
+          session_id: activeSessionId,
+          message: text,
+          character_id: activeCharacterId,
+        }, (delta) => {
+          currentAssistant.content += delta;
+          if (currentAssistant._el) currentAssistant._el.textContent = currentAssistant.content;
+          scrollToBottom();
+          ttsBuffer += delta;
+          flushTtsBuffer(false);
+        });
+      } catch (e) {
+        showError(e.message || String(e));
+      } finally {
+        flushTtsBuffer(true);
+        currentAssistant.streaming = false;
+        if (currentAssistant._el) currentAssistant._el.classList.remove('streaming');
+        if (currentAssistant._actionsEl) currentAssistant._actionsEl.style.display = '';
+        if (!currentAssistant.content) {
+          activeMessages = activeMessages.filter(m => m !== currentAssistant);
+          rebuildMessages();
+        }
+        saveConversations();
+        currentAssistant = null;
+        sending = false;
+        updateSendEnabled();
+        $input.focus();
+      }
+    }
+
+    async function translateMessage(m, trBtn, trBox) {
+      if (!m.content) return;
+      trBtn.disabled = true;
+      trBtn.textContent = '번역 중…';
+      trBox.style.display = '';
+      trBox.classList.add('streaming');
+      trBox.textContent = '';
+      m.translation = '';
+
+      try {
+        await streamSSE('/tools/translate/stream', { text: m.content }, (delta) => {
+          m.translation += delta;
+          trBox.textContent = m.translation;
+          scrollToBottom();
+        });
+        saveConversations();
+      } catch (e) {
+        trBox.textContent = '번역 실패: ' + (e.message || String(e));
+        m.translation = '';
+      } finally {
+        trBox.classList.remove('streaming');
+        trBtn.disabled = false;
+        trBtn.textContent = m.translation ? '🇰🇷 다시 번역' : '🇰🇷 번역';
+      }
+    }
+
+    // ---- 단어장 -------------------------------------------------------
+    function addToVocab(entry) {
+      const wordKey = entry.word.trim().toLowerCase();
+      const existingIdx = vocabulary.findIndex(v => v.word.trim().toLowerCase() === wordKey);
+      const item = { ...entry, savedAt: Date.now() };
+      if (existingIdx >= 0) vocabulary[existingIdx] = item;
+      else vocabulary.unshift(item);
+      saveVocab();
+    }
+
+    // ============================================================
+    // 단어장 뷰
+    // ============================================================
+    const $vocabList = document.getElementById('vocabList');
+    const $vocabSearch = document.getElementById('vocabSearch');
+    const $vocabCount = document.getElementById('vocabCount');
+
+    function renderVocab() {
+      const q = ($vocabSearch.value || '').trim().toLowerCase();
+      const items = vocabulary.filter(v =>
+        !q || v.word.toLowerCase().includes(q) || (v.result || '').toLowerCase().includes(q)
+      );
+      $vocabCount.textContent = `${vocabulary.length}개`;
+      $vocabList.innerHTML = '';
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = vocabulary.length === 0
+          ? '아직 저장된 단어가 없습니다. 채팅에서 사전 조회 후 "단어장에 저장"을 눌러주세요.'
+          : '검색 결과가 없습니다.';
+        $vocabList.appendChild(empty);
+        return;
+      }
+      for (const item of items) {
+        const card = document.createElement('div');
+        card.className = 'vocab-card';
+        card.innerHTML = `
+          <div class="head">
+            <div class="word">${escapeHtml(item.word)}</div>
+            <div class="meta">${formatTime(item.savedAt)}</div>
+            <button class="delete" title="삭제">✕</button>
+          </div>
+          <div class="body">${escapeHtml(item.result || '')}</div>`;
+        card.querySelector('.head').addEventListener('click', (e) => {
+          if (e.target.classList.contains('delete')) return;
+          card.classList.toggle('expanded');
+        });
+        card.querySelector('.delete').addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!confirm(`"${item.word}" 를 단어장에서 삭제할까요?`)) return;
+          vocabulary = vocabulary.filter(v => v !== item);
+          saveVocab();
+          renderVocab();
+        });
+        $vocabList.appendChild(card);
+      }
+    }
+    $vocabSearch.addEventListener('input', renderVocab);
+
+    // ============================================================
+    // 기록 뷰
+    // ============================================================
+    const $historyList = document.getElementById('historyList');
+    const $historyCount = document.getElementById('historyCount');
+
+    function renderHistory() {
+      const convs = [...conversations].sort((a,b) => b.updatedAt - a.updatedAt);
+      $historyCount.textContent = `${convs.length}개`;
+      $historyList.innerHTML = '';
+      if (!convs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = '아직 기록된 대화가 없습니다.';
+        $historyList.appendChild(empty);
+        return;
+      }
+      for (const conv of convs) {
+        const c = characters.find(x => x.id === conv.characterId);
+        const lastMsg = conv.messages[conv.messages.length - 1];
+        const card = document.createElement('div');
+        card.className = 'conv-card';
+        card.innerHTML = `
+          <div class="emoji">${c ? c.emoji : '💬'}</div>
+          <div class="body">
+            <div class="name-line">
+              <div class="name">${escapeHtml(c ? c.name : '대화')}</div>
+              <div class="when">${formatTime(conv.updatedAt)}</div>
+            </div>
+            <div class="preview">${escapeHtml(lastMsg ? lastMsg.content : '(빈 대화)')}</div>
+          </div>
+          <button class="delete" title="삭제">✕</button>`;
+        card.querySelector('.body').addEventListener('click', () => {
+          setActiveSession(conv.sessionId, conv.characterId);
+          navigate('chat');
+        });
+        card.querySelector('.delete').addEventListener('click', async (e) => {
+          e.stopPropagation();
+          if (!confirm('이 대화를 삭제할까요?')) return;
+          conversations = conversations.filter(x => x.sessionId !== conv.sessionId);
+          if (activeSessionId === conv.sessionId) {
+            activeSessionId = ''; activeCharacterId = ''; activeCharacter = null;
+            activeMessages = [];
+            localStorage.removeItem(KEY_ACTIVE_SESSION);
+          }
+          // 서버 측 메모리도 비움 (best-effort).
+          try { await fetch(API_BASE + '/conversation/' + encodeURIComponent(conv.sessionId), { method: 'DELETE' }); } catch {}
+          localStorage.setItem(KEY_CONVERSATIONS, JSON.stringify(conversations));
+          renderHistory();
+        });
+        $historyList.appendChild(card);
+      }
+    }
+
+    // ============================================================
+    // 헤더 버튼
+    // ============================================================
+    $backToHome.addEventListener('click', () => navigate('home'));
+    $resetChat.addEventListener('click', async () => {
+      if (!activeSessionId) return;
+      if (!confirm('이 대화를 초기화할까요? (단어장은 유지됩니다)')) return;
+      try { await fetch(API_BASE + '/conversation/' + encodeURIComponent(activeSessionId), { method: 'DELETE' }); } catch {}
+      stopSpeaking();
+      // 활성 대화의 메시지만 비움.
+      activeMessages = [];
+      const idx = conversations.findIndex(c => c.sessionId === activeSessionId);
+      if (idx >= 0) conversations[idx].messages = [];
+      saveConversations();
+      rebuildMessages();
+      showError('');
+    });
+
+    // ============================================================
+    // "이거 영어로 어떻게" 모달
+    // ============================================================
+    const $modalOverlay = document.getElementById('modalOverlay');
+    const $modalInput = document.getElementById('modalInput');
+    const $modalAnswer = document.getElementById('modalAnswer');
+    const $modalAsk = document.getElementById('modalAsk');
+    const $modalCancel = document.getElementById('modalCancel');
+    const $modalClose = document.getElementById('modalClose');
+    const $fabPhrasing = document.getElementById('fabPhrasing');
+
+    function openModal() {
+      $modalAnswer.style.display = 'none';
+      $modalAnswer.textContent = '';
+      $modalAnswer.classList.remove('streaming');
+      $modalInput.value = '';
+      $modalOverlay.classList.add('visible');
+      setTimeout(() => $modalInput.focus(), 50);
+    }
+    function closeModal() { $modalOverlay.classList.remove('visible'); }
+    $fabPhrasing.addEventListener('click', openModal);
+    $modalClose.addEventListener('click', closeModal);
+    $modalCancel.addEventListener('click', closeModal);
+    $modalOverlay.addEventListener('click', (e) => { if (e.target === $modalOverlay) closeModal(); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && $modalOverlay.classList.contains('visible')) closeModal();
+    });
+    let phrasingBusy = false;
+    async function askPhrasing() {
+      const text = $modalInput.value.trim();
+      if (!text || phrasingBusy) return;
+      phrasingBusy = true;
+      $modalAsk.disabled = true;
+      $modalAsk.textContent = '생각 중…';
+      $modalAnswer.textContent = '';
+      $modalAnswer.style.display = '';
+      $modalAnswer.classList.add('streaming');
+      try {
+        await streamSSE('/tools/phrasing/stream', { korean_text: text }, (delta) => {
+          $modalAnswer.textContent += delta;
+        });
+      } catch (e) {
+        $modalAnswer.textContent = '오류: ' + (e.message || String(e));
+      } finally {
+        $modalAnswer.classList.remove('streaming');
+        $modalAsk.disabled = false;
+        $modalAsk.textContent = '영어로 알려줘';
+        phrasingBusy = false;
+      }
+    }
+    $modalAsk.addEventListener('click', askPhrasing);
+    $modalInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); askPhrasing(); }
+    });
+
+    // ============================================================
+    // 단어 사전 모달 (FAB 📖)
+    // ============================================================
+    const $dictModalOverlay = document.getElementById('dictModalOverlay');
+    const $dictModalClose = document.getElementById('dictModalClose');
+    const $dictModalCancel = document.getElementById('dictModalCancel');
+    const $dictModalGo = document.getElementById('dictModalGo');
+    const $dictWord = document.getElementById('dictWord');
+    const $dictContext = document.getElementById('dictContext');
+    const $dictResult = document.getElementById('dictResult');
+    const $dictSaveArea = document.getElementById('dictSaveArea');
+    const $dictSaveBtn = document.getElementById('dictSaveBtn');
+    const $dictSavedLabel = document.getElementById('dictSavedLabel');
+    const $fabDict = document.getElementById('fabDict');
+
+    /** 마지막 lookup 결과 — 단어장 저장에 사용. */
+    let lastDictLookup = null;
+
+    function openDictModal() {
+      $dictResult.style.display = 'none';
+      $dictResult.textContent = '';
+      $dictResult.classList.remove('streaming');
+      $dictSaveArea.style.display = 'none';
+      $dictSaveBtn.style.display = '';
+      $dictSavedLabel.style.display = 'none';
+      // 단어 입력은 유지하지 않는다 (매번 새로). 문맥은 비움.
+      $dictWord.value = '';
+      $dictContext.value = '';
+      lastDictLookup = null;
+      $dictModalOverlay.classList.add('visible');
+      setTimeout(() => $dictWord.focus(), 50);
+    }
+    function closeDictModal() { $dictModalOverlay.classList.remove('visible'); }
+    $fabDict.addEventListener('click', openDictModal);
+    $dictModalClose.addEventListener('click', closeDictModal);
+    $dictModalCancel.addEventListener('click', closeDictModal);
+    $dictModalOverlay.addEventListener('click', (e) => {
+      if (e.target === $dictModalOverlay) closeDictModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && $dictModalOverlay.classList.contains('visible')) closeDictModal();
+    });
+
+    let dictBusy = false;
+    async function doDictLookup() {
+      const word = $dictWord.value.trim();
+      const context = $dictContext.value.trim();
+      if (!word || dictBusy) return;
+      dictBusy = true;
+      $dictModalGo.disabled = true;
+      $dictModalGo.textContent = '찾는 중…';
+      $dictResult.style.display = '';
+      $dictResult.classList.add('streaming');
+      $dictResult.textContent = '';
+      $dictSaveArea.style.display = 'none';
+
+      let acc = '';
+      try {
+        await streamSSE('/tools/dictionary/stream',
+          { word, context: context || null },
+          (delta) => { acc += delta; $dictResult.textContent = acc; });
+        lastDictLookup = { word, context, result: acc };
+        // 결과 도착 → 저장 버튼 노출 (이미 단어장에 있으면 '저장됨' 라벨로).
+        $dictSaveArea.style.display = 'flex';
+        if (isInVocab(word)) {
+          $dictSaveBtn.style.display = 'none';
+          $dictSavedLabel.style.display = '';
+        } else {
+          $dictSaveBtn.style.display = '';
+          $dictSavedLabel.style.display = 'none';
+        }
+      } catch (e) {
+        $dictResult.textContent = '조회 실패: ' + (e.message || String(e));
+        lastDictLookup = null;
+      } finally {
+        $dictResult.classList.remove('streaming');
+        $dictModalGo.disabled = false;
+        $dictModalGo.textContent = '찾기';
+        dictBusy = false;
+      }
+    }
+    $dictModalGo.addEventListener('click', doDictLookup);
+    $dictWord.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doDictLookup(); }
+    });
+    $dictContext.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doDictLookup(); }
+    });
+
+    $dictSaveBtn.addEventListener('click', () => {
+      if (!lastDictLookup) return;
+      addToVocab({
+        word: lastDictLookup.word,
+        result: lastDictLookup.result,
+        context: lastDictLookup.context || '',
+      });
+      $dictSaveBtn.style.display = 'none';
+      $dictSavedLabel.style.display = '';
+    });
+
+    // ============================================================
+    // STT (Web Speech API)
+    // ============================================================
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let recognizing = false;
+    if (SR) {
+      recognition = new SR();
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+      recognition.onstart = () => { recognizing = true; $mic.classList.add('recording'); $sttStatus.textContent = '듣는 중…'; };
+      recognition.onend = () => { recognizing = false; $mic.classList.remove('recording'); $sttStatus.textContent = ''; };
+      recognition.onerror = (e) => { $sttStatus.textContent = 'STT 오류: ' + e.error;
+        recognizing = false; $mic.classList.remove('recording'); };
+      recognition.onresult = (event) => {
+        let interim = ''; let finalText = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const r = event.results[i];
+          if (r.isFinal) finalText += r[0].transcript;
+          else interim += r[0].transcript;
+        }
+        $input.value = (finalText || interim).trim();
+        autosize();
+        updateSendEnabled();
+        if (finalText) send();
+      };
+    } else {
+      $mic.disabled = true;
+      $mic.title = '이 브라우저는 음성 인식 미지원';
+      $mic.style.opacity = '0.4';
+    }
+    $mic.addEventListener('click', () => {
+      if (!recognition) return;
+      if (recognizing) recognition.stop();
+      else { try { recognition.lang = $lang.value; recognition.start(); }
+             catch (e) { $sttStatus.textContent = String(e); } }
+    });
+
+    // ============================================================
+    // 폼 / 키보드 / 환경설정
+    // ============================================================
+    function autosize() {
+      $input.style.height = 'auto';
+      $input.style.height = Math.min($input.scrollHeight, 140) + 'px';
+    }
+    $form.addEventListener('submit', (e) => { e.preventDefault(); send(); });
+    $input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+    });
+    $input.addEventListener('input', () => { autosize(); updateSendEnabled(); });
+    $lang.addEventListener('change', () => localStorage.setItem(KEY_LANG, $lang.value));
+    $ttsEnabled.addEventListener('change', () => {
+      localStorage.setItem(KEY_TTS, $ttsEnabled.checked ? '1' : '0');
+      if (!$ttsEnabled.checked) stopSpeaking();
+    });
+
+    function loadPrefs() {
+      const lang = localStorage.getItem(KEY_LANG); if (lang) $lang.value = lang;
+      const tts = localStorage.getItem(KEY_TTS); if (tts !== null) $ttsEnabled.checked = tts === '1';
+    }
+
+    // ============================================================
+    // 유틸
+    // ============================================================
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+    function formatTime(ts) {
+      if (!ts) return '';
+      const d = new Date(ts);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    }
+
+    // ============================================================
+    // 부트스트랩
+    // ============================================================
+    loadAll();
+    loadPrefs();
+    if (activeSessionId) {
+      const conv = conversations.find(c => c.sessionId === activeSessionId);
+      if (conv) setActiveSession(conv.sessionId, conv.characterId);
+      else activeSessionId = '';
+    }
+    autosize();
+    updateSendEnabled();
+    loadCharacters();
+    renderRoute();
+  </script>
+</body>
+</html>
